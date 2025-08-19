@@ -1,5 +1,32 @@
 Brickchain Smart Contracts: Decentralized Property Tokenization 🧱
 
+🧱 BrickChain
+Tokenizing Nigeria's Real Estate, One Property at a Time.
+
+BrickChain is a multi-tenant blockchain-powered real estate investment platform that enables realtors and landlords across Nigeria to tokenize their properties and allow users from anywhere in the world to invest fractionally, earn yield, and trade property-backed tokens in a decentralized, peer-to-peer (P2P) marketplace.
+
+🚀 Project Overview
+Real estate in Nigeria is plagued by high entry barriers, limited transparency, and extreme illiquidity. BrickChain solves this by leveraging blockchain to democratize access to property investment and enable instant liquidity through tokenized real-world assets (RWA).
+
+🧠 Key Features
+Property Tokenization
+Realtors tokenize properties into ERC-20 tokens (e.g., 1 token = ₦1 or $1), representing fractional ownership.
+
+Stablecoin Payments
+Investors buy tokens using MockUSDT (a test stablecoin deployed on-chain).
+
+P2P Marketplace
+Investors can list and trade property tokens with each other.
+
+Staking/Yield System
+Token holders can stake tokens to earn yield (e.g., 5% APY), simulating passive income from rental properties.
+
+Role-Based Access Control
+Realtors and Admins are authenticated and authorized via smart contract-controlled roles.
+
+Registry System
+A verified list of approved real estate listings and their token contracts.
+
 ## Project Overview
 This repository contains the core smart contracts for **Brickchain**, a decentralized real estate tokenization platform. Built on Solidity and leveraging the robust Foundry development toolkit, Brickchain enables fractional ownership of properties, secure fund management, and a comprehensive access control system for various stakeholders.
 
