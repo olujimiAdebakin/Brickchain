@@ -1,0 +1,28 @@
+[profile.default]
+src = "src"
+out = "out"
+via_ir = true
+optimizer = true
+optimizer_runs = 200
+test = 'test'
+verify = true
+verifier = "etherscan"
+
+coverage = true
+libs = ["lib"]
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@chainlink/=lib/chainlink-brownie-contracts/"
+]
+solc_version = "0.8.24"
+
+[rpc_endpoints]
+base = "${BASE_SEPOLIA_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.etherscan.io/api" }
+# gas_reports = ["VaultManager", "Vault", "Escrow"]
+
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
