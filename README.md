@@ -32,6 +32,153 @@ This repository contains the core smart contracts for **Brickchain**, a decentra
 
 ## Features
 *   **Access Management**: Implements granular, role-based access control (RBAC) including `ADMIN`, `REALTOR`, `INVESTOR`, `TENANT`, `AUDITOR`, and `TOKEN_ADMIN` roles for secure operations.
+  How It works
+1. Role Hierarchy
+DEFAULT_ADMIN_ROLE / ADMIN_ROLE / TOKEN_ADMIN_ROLE
+    ├─ Can manage all roles (grant/revoke)
+    ├─ Can blacklist users
+    ├─ Can whitelist IPs
+    └─ Can pause/unpause the contract
+
+AUDITOR_ROLE
+    └─ Can mark users as KYC verified
+
+REALTOR_ROLE
+    ├─ Can grant/revoke property-specific access
+    └─ Cannot manage global roles
+
+INVESTOR_ROLE / TENANT_ROLE
+    └─ Access depends on KYC and property permission
+    Note: DEFAULT_ADMIN_ROLE is the super-admin, typically one address with ultimate authority.Note: DEFAULT_ADMIN_ROLE is the super-admin, typically one address with ultimate authority.
+
+
+2. Global Modifiers & Security Checks
+
+| Modifier                    | What it does                             | Roles/Checks                                     |
+| --------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| `onlyAdminOrAuditor`        | Restricts function to admins or auditors | `DEFAULT_ADMIN_ROLE`, `AUDITOR_ROLE`             |
+| `notBlacklisted`            | Blocks blacklisted addresses             | Blacklist mapping                                |
+| `onlyWhitelistedIP(ipHash)` | Restricts by off-chain IP hash           | IP whitelist mapping                             |
+| `onlyKYCVerified`           | Requires KYC verification                | `isKYCVerified[msg.sender] == true`              |
+| `checkRoleTime(role)`       | Checks if a role is still valid          | `roleExpiries[msg.sender][role].expiryTimestamp` |
+Flow:
+Before any sensitive operation, these checks ensure the user is authorized, verified, not banned, and their role is still valid.
+
+
+
+3. Property-Level Permissions
+Property ID → User → Permission
+-------------------------------
+propertyPermissions[propertyId][user] = true/false
+
+REALTOR_ROLE:
+    ├─ Can grant access to users for a property
+    └─ Can revoke access
+
+Other roles (Tenant, Investor):
+    └─ Must have permission AND pass KYC & blacklist checks
+Example:
+To access property #42, msg.sender must satisfy:
+propertyPermissions[42][msg.sender] == true
+AND notBlacklisted && onlyKYCVerified && roleValid.
+
+
+4. Time-Limited Roles
+
+User → Role → RoleExpiry {expiryTimestamp, enabled}
+
+Check:
+    if enabled: block.timestamp <= expiryTimestamp
+    else: role is valid indefinitely
+Makes roles automatically expire, useful for temporary access like short-term auditor or realtor roles.
+
+
+5. KYC & Blacklist Flow
+Call sensitive function
+        |
+        V
+Is user blacklisted? --> Yes: revert
+        |
+        No
+        V
+Is user KYC verified? --> No: revert
+        |
+        Yes
+        V
+Does user have required role? --> No: revert
+        |
+        Yes
+        V
+Does role expire? --> Yes, expired: revert
+        |
+        Valid
+
+
+✅ Quick Summary Diagram
+[DEFAULT_ADMIN / ADMIN / TOKEN_ADMIN]
+            │
+            ├─ Blacklist Management
+            ├─ IP Whitelist Management
+            ├─ Role Management
+            └─ Pause/Unpause
+
+[AUDITOR]
+    └─ KYC Verification
+
+[REALTOR]
+    └─ Property Permissions
+
+[INVESTOR / TENANT]
+    └─ Can access property only if:
+        - Property permission granted
+        - KYC verified
+        - Not blacklisted
+        - Role not expired
+
+                         ┌─────────────────────────┐
+                         │      msg.sender         │
+                         └───────────┬────────────┘
+                                     │
+                                     ▼
+                      ┌────────────────────────────┐
+                      │ Is msg.sender blacklisted? │
+                      │   (notBlacklisted modifier)│
+                      └───────────┬────────────────┘
+                                  │ No
+                                  ▼
+                       ┌─────────────────────────┐
+                       │ Is msg.sender KYC verified?│
+                       │   (onlyKYCVerified)      │
+                       └───────────┬─────────────┘
+                                   │ Yes
+                                   ▼
+                      ┌──────────────────────────┐
+                      │ Does user have required  │
+                      │ role?                    │
+                      │ (AccessControl.hasRole)  │
+                      └───────────┬─────────────┘
+                                  │ Yes
+                                  ▼
+                       ┌─────────────────────────┐
+                       │ Is role time-limited?   │
+                       │ (checkRoleTime modifier)│
+                       │   If yes: expiry check  │
+                       └───────────┬────────────┘
+                                   │ Not expired
+                                   ▼
+                         ┌─────────────────────────┐
+                         │ Access Granted to       │
+                         │ function / property     │
+                         └───────────┬────────────┘
+                                     │
+                                     ▼
+                  ┌───────────────────────────────────────┐
+                  │ For property-specific access:         │
+                  │ propertyPermissions[propertyId][user]?│
+                  │ True → allowed, False → revert        │
+                  └───────────────────────────────────────┘
+
+
 *   **KYC Management**: A dedicated system for Know-Your-Customer (KYC) verification, allowing submission, approval, and rejection of user identities to ensure compliance and eligibility.
 *   **Property Registry**: Manages the listing and lifecycle of real-world properties, linking them to newly minted fractionalized tokens on-chain.
 *   **Property Tokenization**: Creates ERC20-compliant tokens (`PropertyToken`) for each registered property, representing fractional ownership.
